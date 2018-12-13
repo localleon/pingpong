@@ -2,19 +2,40 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var port = flag.String("--port", "9111", "Port were the Metrics are exposed")
 var probetime = flag.Int("--probetime", 120, "How often should ping Probes be executed, in Seconds")
 
+// Structure for our config.yaml
+type Conf struct {
+	Pingtest []string `yaml:",flow"`
+}
+
+type ProbeData struct {
+	target string
+	promet prometheus.Gauge
+}
+
+// Store our Prometheus Probes
+var pingProbes []ProbeData
+var c Conf
+
 func main() {
 	flag.Parse()
+	// Parse Config.yaml
+	c.getConf()
+	// Setup Probes
+	setupPingProbes()
 	// Start Collecting Ping Metrics
 	go recordPingMetrics()
 
@@ -24,23 +45,53 @@ func main() {
 	http.ListenAndServe(":"+*port, nil)
 }
 
-func init() {
-	// Registering all Metrics
-	prometheus.MustRegister(avrPingToCloudFlare)
-	prometheus.MustRegister(avrPingToCloudFlare2)
-	prometheus.MustRegister(avrPingToGoogle)
-	prometheus.MustRegister(avrPingToGoogle2)
+func setupPingProbes() {
+	// PingTest Probes parsing
+	for _, pingHost := range c.Pingtest {
+		validName := killPointsInString(pingHost)
+		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "pingpong_avr_ping_to_" + validName,
+			Help: "Avrage of 3 Ping Probes to " + validName,
+		})
+		// Craft our Probestruct for the
+		probe := ProbeData{
+			target: pingHost,
+			promet: promeprobe,
+		}
+
+		pingProbes = append(pingProbes, probe)
+	}
+	// Register Probes in Prometheus
+	for _, tmpProbe := range pingProbes {
+		prometheus.MustRegister(tmpProbe.promet)
+	}
 }
 
 func recordPingMetrics() {
 	for {
 		log.Println("Probe: Starting to execute Ping Probes")
-		avrPingToCloudFlare.Set(pingIPv4Probe("1.1.1.1"))
-		avrPingToCloudFlare2.Set(pingIPv4Probe("1.0.0.1"))
-		avrPingToGoogle.Set(pingIPv4Probe("8.8.8.8"))
-		avrPingToGoogle2.Set(pingIPv4Probe("8.8.4.4"))
+		for _, element := range pingProbes {
+			element.promet.Set(pingIPv4Probe(element.target))
+		}
 		log.Println("Probe: Finished with Ping Probes, waiting", *probetime, "seconds for next Probe")
 		// Wait some time for the Next Probe
 		time.Sleep(time.Duration(*probetime) * time.Second)
 	}
+}
+
+func (c *Conf) getConf() *Conf {
+
+	yamlFile, err := ioutil.ReadFile("config.yaml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+	}
+	return c
+}
+
+func killPointsInString(tmp string) string {
+	return strings.Replace(tmp, ".", "_", -1)
 }

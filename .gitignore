@@ -14,3 +14,6 @@
 
 # KDE Files
 .directory
+
+# Bin output of go build
+pingpong
