@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -13,8 +14,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var port = flag.String("--port", "9111", "Port were the Metrics are exposed")
-var probetime = flag.Int("--probetime", 120, "How often should ping Probes be executed, in Seconds")
+var port = flag.String("port", "9111", "Port were the Metrics are exposed")
+var probetime = flag.Int("probetime", 120, "How often should ping Probes be executed, in Seconds")
+var configpath = flag.String("config", "config.yaml", "Choose your config File")
 
 // Structure for our config.yaml
 type Conf struct {
@@ -32,7 +34,7 @@ var c Conf
 
 func main() {
 	flag.Parse()
-	// Parse Config.yaml
+	// Parse Config file from --config
 	c.getConf()
 	// Setup Probes
 	setupPingProbes()
@@ -81,9 +83,10 @@ func recordPingMetrics() {
 
 func (c *Conf) getConf() *Conf {
 
-	yamlFile, err := ioutil.ReadFile("config.yaml")
+	yamlFile, err := ioutil.ReadFile(*configpath)
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
+		os.Exit(255)
 	}
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
