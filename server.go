@@ -14,13 +14,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var port = flag.String("port", "9111", "Port were the Metrics are exposed")
-var probetime = flag.Int("probetime", 120, "How often should ping Probes be executed, in Seconds")
 var configpath = flag.String("config", "config.yaml", "Choose your config File")
 
 // Structure for our config.yaml
 type Conf struct {
-	Pingtest []string `yaml:",flow"`
+	Listen    string
+	Probetime int
+	Pingtest  []string `yaml:",flow"`
 }
 
 type ProbeData struct {
@@ -42,9 +42,9 @@ func main() {
 	go recordPingMetrics()
 
 	// Setup Prometheus Metrics HTTP Server
-	log.Println("Started HTTP Server")
+	log.Println("Started HTTP Server: " + c.Listen)
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":"+*port, nil)
+	http.ListenAndServe(c.Listen, nil)
 }
 
 func setupPingProbes() {
@@ -75,9 +75,9 @@ func recordPingMetrics() {
 		for _, element := range pingProbes {
 			element.promet.Set(pingIPv4Probe(element.target))
 		}
-		log.Println("Probe: Finished with Ping Probes, waiting", *probetime, "seconds for next Probe")
+		log.Println("Probe: Finished with Ping Probes, waiting", c.Probetime, "seconds for next Probe")
 		// Wait some time for the Next Probe
-		time.Sleep(time.Duration(*probetime) * time.Second)
+		time.Sleep(time.Duration(c.Probetime) * time.Second)
 	}
 }
 
