@@ -4,12 +4,22 @@
 ## Usage 
 1. Define your Hosts in the config.yaml File
 ```
+listen : ":9111"     # Port for the http Server to listen on 
+probetime: 120  # How often Probes are executed in Seconds
 # Hosts to display an avg ping of 3 PingProbes
-pingtest: 
+avgpingprobes: 
 - "1.1.1.1"
 - "1.0.0.1"
 - "8.8.8.8"
 - "8.8.4.4"
+# Send a Ping  to test if they are online
+onlinepingprobes: 
+- "golem.de"
+- "test.de"
+# Send an HTTP Get-Request to test if the hosts are online, needs https:// or http://
+onlinehttpprobes:
+- "http://golem.de"
+- "http://google.de"
 ```
 2. Start the Server
 3. Scrape your Metrics with Prometheus under `$PINGPONG_IP:9111/metrics`
@@ -20,10 +30,10 @@ Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' p
 # Contributing 
 - Pull-requests and bug reports wanted !
 
-# Ideas
+# Ideas / ToDo`s
 - DNS Metrics ?
-- Online Test via Ping for local Hosts ? 
 - Traceroute/Hops to target ? 
+- IPv6/IPv4 should be selectable
 
 # Author 
-Copyright localleon(c) 2018 
+Copyright localleon(c) 2019

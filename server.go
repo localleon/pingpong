@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -18,9 +17,11 @@ var configpath = flag.String("config", "config.yaml", "Choose your config File")
 
 // Structure for our config.yaml
 type Conf struct {
-	Listen    string
-	Probetime int
-	Pingtest  []string `yaml:",flow"`
+	Listen           string
+	Probetime        int
+	AvgPingProbes    []string `yaml:",flow"`
+	OnlinePingProbes []string `yaml:",flow"`
+	OnlineHttpProbes []string `yaml:",flow"`
 }
 
 type ProbeData struct {
@@ -29,7 +30,9 @@ type ProbeData struct {
 }
 
 // Store our Prometheus Probes
+var onlineHTTPProbes []ProbeData
 var pingProbes []ProbeData
+var onlinePingProbes []ProbeData
 var c Conf
 
 func main() {
@@ -38,8 +41,10 @@ func main() {
 	c.getConf()
 	// Setup Probes
 	setupPingProbes()
+	setupOnlineProbes()
+	setupOnlineHTTPProbes()
 	// Start Collecting Ping Metrics
-	go recordPingMetrics()
+	go collector()
 
 	// Setup Prometheus Metrics HTTP Server
 	log.Println("Started HTTP Server: " + c.Listen)
@@ -47,12 +52,58 @@ func main() {
 	http.ListenAndServe(c.Listen, nil)
 }
 
-func setupPingProbes() {
-	// PingTest Probes parsing
-	for _, pingHost := range c.Pingtest {
+func setupOnlineHTTPProbes() {
+	// AvgPingProbes Probes parsing
+	for _, host := range c.OnlineHttpProbes {
+		// Remove all not valid characters
+		validName := killPointsInString(host)
+		validName = strings.Replace(validName, "http://", "", -1)
+		validName = strings.Replace(validName, "https://", "", -1)
+		// Construct our Prometheus.NewGauge Probe
+		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "pingpong_online_http_get_" + validName,
+			Help: "Send`s an HTTP-GET to the hosts and returns 1 if the hosts responds",
+		})
+		// Craft our Probestruct and append to global registery
+		probe := ProbeData{
+			target: host,
+			promet: promeprobe,
+		}
+		onlineHTTPProbes = append(onlineHTTPProbes, probe)
+	}
+	// Register Probes in Prometheus
+	for _, tmpProbe := range onlineHTTPProbes {
+		prometheus.MustRegister(tmpProbe.promet)
+	}
+}
+
+func setupOnlineProbes() {
+	// AvgPingProbes Probes parsing
+	for _, pingHost := range c.OnlinePingProbes {
 		validName := killPointsInString(pingHost)
 		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "pingpong_avr_ping_to_" + validName,
+			Name: "pingpong_online_ping_" + validName,
+			Help: "Send`s an ping to the hosts and returns 1 if the hosts responds",
+		})
+		// Craft our Probestruct and append to global registery
+		probe := ProbeData{
+			target: pingHost,
+			promet: promeprobe,
+		}
+		onlinePingProbes = append(onlinePingProbes, probe)
+	}
+	// Register Probes in Prometheus
+	for _, tmpProbe := range onlinePingProbes {
+		prometheus.MustRegister(tmpProbe.promet)
+	}
+}
+
+func setupPingProbes() {
+	// AvgPingProbes Probes parsing
+	for _, pingHost := range c.AvgPingProbes {
+		validName := killPointsInString(pingHost)
+		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "pingpong_avr_ping_" + validName,
 			Help: "Avrage of 3 Ping Probes to " + validName,
 		})
 		// Craft our Probestruct for the
@@ -66,18 +117,6 @@ func setupPingProbes() {
 	// Register Probes in Prometheus
 	for _, tmpProbe := range pingProbes {
 		prometheus.MustRegister(tmpProbe.promet)
-	}
-}
-
-func recordPingMetrics() {
-	for {
-		log.Println("Probe: Starting to execute Ping Probes")
-		for _, element := range pingProbes {
-			element.promet.Set(pingIPv4Probe(element.target))
-		}
-		log.Println("Probe: Finished with Ping Probes, waiting", c.Probetime, "seconds for next Probe")
-		// Wait some time for the Next Probe
-		time.Sleep(time.Duration(c.Probetime) * time.Second)
 	}
 }
 
