@@ -35,5 +35,10 @@ Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' p
 - Traceroute/Hops to target ? 
 - IPv6/IPv4 should be selectable
 
+# Plattform 
+Currently tested on:
+- linux/amd64
+- linux/arm
+
 # Author 
 Copyright localleon(c) 2019
