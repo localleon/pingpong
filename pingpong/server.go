@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,11 +18,19 @@ var configpath = flag.String("config", "config.yaml", "Choose your config File")
 
 // Structure for our config.yaml
 type Conf struct {
-	Listen           string
-	Probetime        int
-	AvgPingProbes    []string `yaml:",flow"`
-	OnlinePingProbes []string `yaml:",flow"`
-	OnlineHttpProbes []string `yaml:",flow"`
+	// Config for the exporter itself
+	Listen    string
+	Probetime int
+	// Probe Definiton
+	AvgPingProbes struct {
+		IPv4 []string `yaml:",flow"`
+		IPv6 []string `yaml:",flow"`
+	}
+	OnlinePingProbes struct {
+		IPv4 []string `yaml:",flow"`
+		IPv6 []string `yaml:",flow"`
+	}
+	OnlineHTTPProbes []string `yaml:",flow"`
 }
 
 type ProbeData struct {
@@ -29,16 +38,22 @@ type ProbeData struct {
 	promet prometheus.Gauge
 }
 
+type PingProbeData struct {
+	IPv4 []ProbeData
+	IPv6 []ProbeData
+}
+
 // Store our Prometheus Probes
 var onlineHTTPProbes []ProbeData
-var pingProbes []ProbeData
-var onlinePingProbes []ProbeData
+var pingProbes PingProbeData
+var onlinePingProbes PingProbeData
 var c Conf
 
 func main() {
 	flag.Parse()
 	// Parse Config file from --config
 	c.getConf()
+	fmt.Println(c)
 	// Setup Probes
 	setupPingProbes()
 	setupOnlineProbes()
@@ -54,7 +69,7 @@ func main() {
 
 func setupOnlineHTTPProbes() {
 	// AvgPingProbes Probes parsing
-	for _, host := range c.OnlineHttpProbes {
+	for _, host := range c.OnlineHTTPProbes {
 		// Remove all not valid characters
 		validName := makeValidMetricName(host)
 
@@ -76,12 +91,13 @@ func setupOnlineHTTPProbes() {
 	}
 }
 
-func setupOnlineProbes() {
-	// AvgPingProbes Probes parsing
-	for _, pingHost := range c.OnlinePingProbes {
+func parseOnlineProbes() {
+	// Parse Probe Definiton form the config file into an prometheus gauge probe
+	// Online Probes parsing for IPv4
+	for _, pingHost := range c.OnlinePingProbes.IPv4 {
 		validName := makeValidMetricName(pingHost)
 		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "pingpong_online_ping_" + validName,
+			Name: "pingpong_online_ping_v4_" + validName,
 			Help: "Send`s an ping to the hosts and returns 1 if the hosts responds",
 		})
 		// Craft our Probestruct and append to global registery
@@ -89,20 +105,42 @@ func setupOnlineProbes() {
 			target: pingHost,
 			promet: promeprobe,
 		}
-		onlinePingProbes = append(onlinePingProbes, probe)
+		onlinePingProbes.IPv4 = append(onlinePingProbes.IPv4, probe)
 	}
+	// Online Probes parsing for IPv4
+	for _, pingHost := range c.OnlinePingProbes.IPv6 {
+		validName := makeValidMetricName(pingHost)
+		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "pingpong_online_ping_v6_" + validName,
+			Help: "Send`s an ping to the hosts and returns 1 if the hosts responds",
+		})
+		// Craft our Probestruct and append to global registery
+		probe := ProbeData{
+			target: pingHost,
+			promet: promeprobe,
+		}
+		onlinePingProbes.IPv6 = append(onlinePingProbes.IPv6, probe)
+	}
+}
+
+func setupOnlineProbes() {
+	parseOnlineProbes()
 	// Register Probes in Prometheus
-	for _, tmpProbe := range onlinePingProbes {
+	for _, tmpProbe := range onlinePingProbes.IPv4 {
+		prometheus.MustRegister(tmpProbe.promet)
+	}
+	for _, tmpProbe := range onlinePingProbes.IPv6 {
 		prometheus.MustRegister(tmpProbe.promet)
 	}
 }
 
-func setupPingProbes() {
-	// AvgPingProbes Probes parsing
-	for _, pingHost := range c.AvgPingProbes {
+func parsePingProbes() {
+	// Parse Probe Definiton form the config file into an prometheus gauge probe
+	// IPv4 Average Probes parsing
+	for _, pingHost := range c.AvgPingProbes.IPv4 {
 		validName := makeValidMetricName(pingHost)
 		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "pingpong_avr_ping_" + validName,
+			Name: "pingpong_avr_ping_v4_" + validName,
 			Help: "Avrage of 3 Ping Probes to " + validName,
 		})
 		// Craft our Probestruct for the
@@ -111,10 +149,32 @@ func setupPingProbes() {
 			promet: promeprobe,
 		}
 
-		pingProbes = append(pingProbes, probe)
+		pingProbes.IPv4 = append(pingProbes.IPv4, probe)
 	}
+	// IPv4 Average Probes parsing
+	for _, pingHost := range c.AvgPingProbes.IPv6 {
+		validName := makeValidMetricName(pingHost)
+		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "pingpong_avr_ping_v6_" + validName,
+			Help: "Avrage of 3 Ping Probes to " + validName,
+		})
+		// Craft our Probestruct for the
+		probe := ProbeData{
+			target: pingHost,
+			promet: promeprobe,
+		}
+
+		pingProbes.IPv6 = append(pingProbes.IPv6, probe)
+	}
+}
+
+func setupPingProbes() {
+	parsePingProbes()
 	// Register Probes in Prometheus
-	for _, tmpProbe := range pingProbes {
+	for _, tmpProbe := range pingProbes.IPv4 {
+		prometheus.MustRegister(tmpProbe.promet)
+	}
+	for _, tmpProbe := range pingProbes.IPv6 {
 		prometheus.MustRegister(tmpProbe.promet)
 	}
 }
