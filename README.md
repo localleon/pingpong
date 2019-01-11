@@ -15,6 +15,7 @@ avgpingprobes:
     - "8.8.4.4"
   ipv6:
     - "google.de"
+    - "2606:4700:4700::1111"
 # Send a Ping  to test if they are online
 onlinepingprobes: 
   ipv4:
