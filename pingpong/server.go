@@ -56,9 +56,8 @@ func setupOnlineHTTPProbes() {
 	// AvgPingProbes Probes parsing
 	for _, host := range c.OnlineHttpProbes {
 		// Remove all not valid characters
-		validName := killPointsInString(host)
-		validName = strings.Replace(validName, "http://", "", -1)
-		validName = strings.Replace(validName, "https://", "", -1)
+		validName := makeValidMetricName(host)
+
 		// Construct our Prometheus.NewGauge Probe
 		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "pingpong_online_http_get_" + validName,
@@ -80,7 +79,7 @@ func setupOnlineHTTPProbes() {
 func setupOnlineProbes() {
 	// AvgPingProbes Probes parsing
 	for _, pingHost := range c.OnlinePingProbes {
-		validName := killPointsInString(pingHost)
+		validName := makeValidMetricName(pingHost)
 		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "pingpong_online_ping_" + validName,
 			Help: "Send`s an ping to the hosts and returns 1 if the hosts responds",
@@ -101,7 +100,7 @@ func setupOnlineProbes() {
 func setupPingProbes() {
 	// AvgPingProbes Probes parsing
 	for _, pingHost := range c.AvgPingProbes {
-		validName := killPointsInString(pingHost)
+		validName := makeValidMetricName(pingHost)
 		promeprobe := prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "pingpong_avr_ping_" + validName,
 			Help: "Avrage of 3 Ping Probes to " + validName,
@@ -134,6 +133,11 @@ func (c *Conf) getConf() *Conf {
 	return c
 }
 
-func killPointsInString(tmp string) string {
-	return strings.Replace(tmp, ".", "_", -1)
+func makeValidMetricName(tmp string) string {
+	res := strings.Replace(tmp, ".", "_", -1)
+	res = strings.Replace(res, "-", "_", -1)
+	res = strings.Replace(res, "http://", "", -1)
+	res = strings.Replace(res, "https://", "", -1)
+	res = strings.Replace(res, "/", "", -1)
+	return res
 }
