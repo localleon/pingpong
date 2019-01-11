@@ -13,8 +13,8 @@ avgpingprobes:
 onlinepingprobes: 
   ipv4:
     - "golem.de"
-    - "test.de"
   ipv6:
+    - "test.schrimpe.de"
 # Send an HTTP Get-Request to test if the hosts are online, needs https:// or http://
 onlinehttpprobes:
   - "http://golem.de"
