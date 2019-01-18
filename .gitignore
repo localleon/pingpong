@@ -15,3 +15,5 @@
 # KDE Files
 .directory
 
+# Ansible retrys
+ansible-deploy.retry

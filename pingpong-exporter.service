@@ -1,0 +1,18 @@
+[Unit]
+Description=PingPong - Network Statistics Prometheus Exporter
+ConditionPathExists=/opt/pingpong/pingpong.bin
+After=network.target
+ 
+[Service]
+Type=simple
+User=root
+Group=root
+
+Restart=on-failure
+RestartSec=30
+
+WorkingDirectory=/opt/pingpong/
+ExecStart=/opt/pingpong/pingpong.bin --config=/opt/pingpong/config.yaml
+ 
+[Install]
+WantedBy=multi-user.target
