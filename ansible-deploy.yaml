@@ -1,0 +1,46 @@
+---
+- hosts: monitoring.virt.lan
+  remote_user: pi
+  become: yes
+  become_method: sudo
+
+  vars:
+    build_path: ./pingpong-linux-arm.bin
+    service_path: ./pingpong-exporter.service
+    config_path: ./pingpong/config-example.yaml
+
+  tasks:
+    - name: Creates directory
+      file:
+        path: /opt/pingpong/
+        state: directory
+
+    - name: copying binary to remote 
+      copy:
+        src:  "{{build_path}}"
+        dest:   "/opt/pingpong/pingpong.bin"
+        owner: root
+        group: root
+        mode: 0755
+    
+    - name: copying config file to remote 
+      copy:
+        src:  "{{config_path}}"
+        dest:   "/opt/pingpong/config.yaml"
+
+    - name: copying systemd-service file to remote
+      copy:
+        src:  "{{service_path}}"
+        dest:   "/etc/systemd/system/pingpong-exporter.service"
+
+    - name: just force systemd to reread configs 
+      systemd:
+        daemon_reload: yes
+
+    - name: enable service pingpong-service and start
+      systemd:
+        name: pingpong-exporter
+        enabled: yes
+        state: started
+
+      
