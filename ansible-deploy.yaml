@@ -37,10 +37,10 @@
       systemd:
         daemon_reload: yes
 
-    - name: enable service pingpong-service and start
+    - name: enable service pingpong-service and restart
       systemd:
         name: pingpong-exporter
         enabled: yes
-        state: started
+        state: restarted
 
       
