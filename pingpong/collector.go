@@ -30,7 +30,7 @@ func recordHTTPGetMetrics() {
 
 func recordPingMetrics() {
 	log.Println("Collector: Starting to execute Ping Probes")
-	for _, element := range pingProbes {
+	for _, element := range pingProbes.IPv4 {
 		var avr3RTT float64
 		// Make 3 Ping Probes
 		for index := 0; index < 3; index++ {
@@ -41,12 +41,30 @@ func recordPingMetrics() {
 		// Convert from ms to normal float
 		element.promet.Set(avr3RTT)
 	}
+	for _, element := range pingProbes.IPv6 {
+		var avr3RTT float64
+		// Make 3 Ping Probes
+		for index := 0; index < 3; index++ {
+			avr3RTT += pingIPv6Probe(element.target)
+		}
+		// Calculate Average of Probes
+		avr3RTT = avr3RTT / 3
+		// Convert from ms to normal float
+		element.promet.Set(avr3RTT)
+	}
 }
 
 func recordOnlinePingProbesMetrics() {
 	log.Println("Collector: Starting to execute OnlinePingProbes")
-	for _, element := range onlinePingProbes {
+	for _, element := range onlinePingProbes.IPv4 {
 		if pingIPv4Probe(element.target) != 0 {
+			element.promet.Set(1) // Host is online
+		} else {
+			element.promet.Set(0) // Host is offline
+		}
+	}
+	for _, element := range onlinePingProbes.IPv6 {
+		if pingIPv6Probe(element.target) != 0 {
 			element.promet.Set(1) // Host is online
 		} else {
 			element.promet.Set(0) // Host is offline
