@@ -27,6 +27,17 @@ onlinehttpprobes:
 ## Metrics
 Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' präfix. 
 
+## Deploying 
+1. Use Ansible 
+    - Run build.sh to create binarys or download them from the releases page
+    - Change host and username in ansible-deploy.yaml (Ansible-Playbook)
+    - Run ``` ansible-playbook ./ansible-deploy.yaml ```  (tested on CentOS and Raspbian)
+    - Add scrape Job to your prometheus server and you're done
+2. Do it yourself
+    - Copy the binary and the example-config file to your remote server
+    - Copy the systemd-service file to /etc/systemd/system/
+    - Use ```systemctl``` to enable the Service
+
 # Contributing 
 - Pull-requests and bug reports wanted !
 
