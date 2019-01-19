@@ -1,11 +1,11 @@
 ---
-- hosts: test.virt.lan
-  remote_user: lrau
+- hosts: monitoring.virt.lan
+  remote_user: pi
   become: yes
   become_method: sudo
 
   vars:
-    build_path: ./pingpong-linux-amd64.bin
+    build_path: ./pingpong-linux-arm.bin
     service_path: ./pingpong-exporter.service
     config_path: ./pingpong/config-example.yaml
 
