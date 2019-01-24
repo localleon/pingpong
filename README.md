@@ -1,5 +1,6 @@
 # PingPong
 ### Prometheus Exporter for Ping and DNS Statistics
+![pingpong-screen-graph](https://user-images.githubusercontent.com/28186014/51702831-1c237a80-2015-11e9-9907-6afbd9261564.png)
 
 ## Usage 
 1. Define your Hosts in the config.yaml File
@@ -33,9 +34,10 @@ onlinehttpprobes:
 You can use IPv4 or IPv6 for your probe. 
 
 ! Disclaimer, these are just random Hosts and are not related to the Project !
-
+ 
 ## Metrics
 Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' präfix. 
+![pingpong-screen-graph2](https://user-images.githubusercontent.com/28186014/51702836-1f1e6b00-2015-11e9-93e3-13f3048d141d.png)
 
 ## Deploying 
 1. Use Ansible 
