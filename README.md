@@ -45,7 +45,10 @@ Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' p
     - Change host and username in ansible-deploy.yaml (Ansible-Playbook)
     - Run ``` ansible-playbook ./ansible-deploy.yaml ```  (tested on CentOS and Raspbian)
     - Add scrape Job to your prometheus server and you're done
-2. Do it yourself
+2. Container with Docker
+    - Use the provided Dockerfile and run ```docker build -t pingpong .```
+    - Run the Container with ```docker run```
+3. Do it yourself
     - Copy the binary and the example-config file to your remote server
     - Copy the systemd-service file to /etc/systemd/system/
     - Use ```systemctl``` to enable the Service
