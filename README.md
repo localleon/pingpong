@@ -58,8 +58,6 @@ Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' p
 
 # Ideas / ToDo`s
 - DNS Metrics ?
-- Traceroute/Hops to target ? 
-- IPv6/IPv4 should be selectable
 
 # Plattform 
 Currently tested on:
