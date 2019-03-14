@@ -2,6 +2,8 @@
 ### Prometheus Exporter for Ping and DNS Statistics
 ![pingpong-screen-graph](https://user-images.githubusercontent.com/28186014/51702831-1c237a80-2015-11e9-9907-6afbd9261564.png)
 
+To learn more about Prometheus visit https://prometheus.io/docs/introduction/overview/
+
 ## Usage 
 1. Define your Hosts in the config.yaml File
 ```
@@ -58,8 +60,6 @@ Metrics are exposed under :9111/metrics. All Metrics start with the 'pingpong' p
 
 # Ideas / ToDo`s
 - DNS Metrics ?
-- Traceroute/Hops to target ? 
-- IPv6/IPv4 should be selectable
 
 # Plattform 
 Currently tested on:
