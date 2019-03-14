@@ -1,7 +1,10 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 
 # Start from golang base image
-FROM golang:latest
+FROM golang:alpine
+
+# Install Git in Alpine
+RUN apk add git
 
 # Set the Current Working Directory inside the container
 WORKDIR $GOPATH/src/github.com/localleon/pingpong
