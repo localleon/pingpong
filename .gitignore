@@ -18,4 +18,5 @@
 # Ansible retrys
 ansible-deploy.retry
 
+pingpong
 assets/pingpong-logo.png
